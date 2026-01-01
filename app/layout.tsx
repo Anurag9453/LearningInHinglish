@@ -15,10 +15,9 @@ export default function RootLayout({
     if (!supabase) return
 
     // 🔑 This restores session after Google redirect
-    supabase.auth.onAuthStateChange((_event, session) => {
-      // session is now available globally
-      console.log('Auth state changed:', _event, session)
-    })
+   supabase.auth.onAuthStateChange((_event: any, session: any) => {
+  console.log('Auth state changed:', _event, session)
+})
   }, [])
 
   return (

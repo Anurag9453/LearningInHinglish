@@ -10,16 +10,20 @@ export default function DashboardPage() {
   const { xp } = useXp()
   const router = useRouter()
 
+   const handleLogout = () => {
+    router.push('/')
+  }
+
   // ✅ ADD THIS BLOCK HERE
   useEffect(() => {
     const supabase = getSupabase()
     if (!supabase) return
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.push('/login')
-      }
-    })
+      supabase.auth.getUser().then((res: any) => {
+    if (!res?.data?.user) {
+      router.push('/login')
+    }
+  })
   }, [router])
   // ✅ END OF BLOCK
 
