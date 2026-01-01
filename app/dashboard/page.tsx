@@ -1,16 +1,29 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { useXp } from '@/app/context/xp-context'
+import { getSupabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 
 export default function DashboardPage() {
   const { xp } = useXp()
   const router = useRouter()
 
-  const handleLogout = () => {
-    router.push('/')
-  }
+  // ✅ ADD THIS BLOCK HERE
+  useEffect(() => {
+    const supabase = getSupabase()
+    if (!supabase) return
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        router.push('/login')
+      }
+    })
+  }, [router])
+  // ✅ END OF BLOCK
+
+
 
   return (
     <div style={{ padding: 40 }}>

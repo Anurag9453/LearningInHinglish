@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { supabase } from '@/app/lib/supabase'
+import { getSupabase } from '../lib/supabase'
+
 
 
 
@@ -49,10 +50,13 @@ export default function LoginPage() {
         {/* Google Login (UI only for now) */}
        <button
           onClick={async () => {
+            const supabase = getSupabase()
+            if (!supabase) return
+
             await supabase.auth.signInWithOAuth({
               provider: 'google',
               options: {
-                redirectTo: 'http://localhost:3000/dashboard',
+                redirectTo: 'https://learning-in-hinglish.vercel.app/dashboard',
               },
             })
           }}
