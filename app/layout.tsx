@@ -15,13 +15,21 @@ export default function RootLayout({
     if (!supabase) return
 
     // 🔑 This restores session after Google redirect
-   supabase.auth.onAuthStateChange((_event: any, session: any) => {
-  console.log('Auth state changed:', _event, session)
-})
+    supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Auth state changed:', _event, session)
+      }
+    })
   }, [])
 
   return (
     <html lang="en">
+      <head>
+        <title>HinglishLearn - Learn in Simple Hinglish</title>
+        <meta name="description" content="Learn school subjects in Hinglish - easy to understand, step by step" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#3b82f6" />
+      </head>
       <body>
         <XpProvider>
           {children}

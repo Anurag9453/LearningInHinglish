@@ -6,19 +6,23 @@ const XpContext = createContext<any>(null)
 
 export function XpProvider({ children }: { children: React.ReactNode }) {
   const [xp, setXp] = useState(0)
+  const [isClient, setIsClient] = useState(false)
 
-  // Load XP from localStorage on first load
+  // Ensure we're on the client before accessing localStorage
   useEffect(() => {
+    setIsClient(true)
     const savedXp = localStorage.getItem('xp')
     if (savedXp) {
       setXp(Number(savedXp))
     }
   }, [])
 
-  // Save XP to localStorage whenever it changes
+  // Save XP to localStorage whenever it changes (only on client)
   useEffect(() => {
-    localStorage.setItem('xp', xp.toString())
-  }, [xp])
+    if (isClient) {
+      localStorage.setItem('xp', xp.toString())
+    }
+  }, [xp, isClient])
 
   return (
     <XpContext.Provider value={{ xp, setXp }}>
