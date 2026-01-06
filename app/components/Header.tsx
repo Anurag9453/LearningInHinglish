@@ -1,13 +1,54 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useXp } from "../context/xp-context";
+import { fetchSiteContent } from "../lib/backend";
 import { getSupabase } from "../lib/supabase";
+
+type HeaderContent = {
+  brandName?: string;
+  logoLetter?: string;
+  dashboardLabel?: string;
+  logoutLabel?: string;
+};
 
 export default function Header() {
   const router = useRouter();
   const { xp, setXp } = useXp();
+
+  const [content, setContent] = useState<HeaderContent | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+
+    fetchSiteContent<HeaderContent>("header")
+      .then((data) => {
+        if (!alive) return;
+        setContent(data);
+      })
+      .catch(() => {
+        // ignore
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const brandName = content?.brandName?.trim() || "HinglishLearn";
+  const dashboardLabel = content?.dashboardLabel?.trim() || "Dashboard";
+  const logoutLabel = content?.logoutLabel?.trim() || "Logout";
+
+  const logoLetter = useMemo(() => {
+    const explicit = content?.logoLetter?.trim();
+    if (explicit) return explicit.slice(0, 1).toUpperCase();
+
+    const inferred = brandName.trim();
+    if (!inferred) return "H";
+    return inferred.slice(0, 1).toUpperCase();
+  }, [brandName, content?.logoLetter]);
 
   const handleLogout = async () => {
     const supabase = getSupabase();
@@ -33,11 +74,9 @@ export default function Header() {
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">H</span>
+              <span className="text-white font-bold text-lg">{logoLetter}</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">
-              HinglishLearn
-            </span>
+            <span className="text-xl font-bold text-gray-900">{brandName}</span>
           </Link>
 
           {/* Navigation */}
@@ -46,7 +85,7 @@ export default function Header() {
               href="/dashboard"
               className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
-              Dashboard
+              {dashboardLabel}
             </Link>
           </nav>
 
@@ -77,7 +116,7 @@ export default function Header() {
               onClick={handleLogout}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
             >
-              Logout
+              {logoutLabel}
             </button>
           </div>
         </div>

@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -6,7 +10,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Avoid Turbopack picking the wrong workspace root when multiple lockfiles exist.
   turbopack: {
-    root: process.cwd(),
+    root: projectRoot,
   },
   // Optimize images for better performance
   images: {

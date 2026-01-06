@@ -269,6 +269,23 @@ on conflict (key) do update
 set value = excluded.value,
     updated_at = now();
 
+-- Seed site content used by Header (safe to re-run)
+insert into public.site_content (key, value, updated_at)
+values
+  (
+    'header',
+    jsonb_build_object(
+      'brandName', 'HinglishLearn',
+      'logoLetter', 'H',
+      'dashboardLabel', 'Dashboard',
+      'logoutLabel', 'Logout'
+    ),
+    now()
+  )
+on conflict (key) do update
+set value = excluded.value,
+    updated_at = now();
+
 insert into public.units (module_slug, unit_slug, title, description, icon, sort_order)
 values
   ('polynomials', 'unit-1', 'What is a Polynomial?', 'Polynomial ek mathematical expression hota hai jisme variables aur constants hote hain', '📘', 1),

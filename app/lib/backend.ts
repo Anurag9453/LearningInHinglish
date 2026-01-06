@@ -126,6 +126,31 @@ export async function fetchHomePayload(): Promise<{
   return { content: null, modules };
 }
 
+export async function fetchSiteContent<T = unknown>(
+  key: string
+): Promise<T | null> {
+  try {
+    const res = await fetch(`/api/catalog/content/${encodeURIComponent(key)}`);
+    if (res.ok) {
+      const json = (await res.json()) as { content: T | null };
+      return (json.content ?? null) as T | null;
+    }
+  } catch {
+    // ignore, fall back
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data } = await supabase
+    .from("site_content")
+    .select("value")
+    .eq("key", key)
+    .maybeSingle();
+
+  return (data?.value ?? null) as T | null;
+}
+
 export async function fetchUnits(moduleSlug: string): Promise<UnitRow[]> {
   try {
     const res = await fetch(
