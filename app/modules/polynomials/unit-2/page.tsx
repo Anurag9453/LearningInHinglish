@@ -1,30 +1,44 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import Header from '../../../components/Header'
+import Link from "next/link";
+import Header from "../../../components/Header";
+import { useEffect } from "react";
+import { markUnitCompleted } from "@/app/lib/backend";
 
 export default function Unit2() {
+  useEffect(() => {
+    markUnitCompleted("polynomials", "unit-2");
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
       <Header />
-      
+
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="mb-6">
           <ol className="flex items-center space-x-2 text-sm text-gray-600">
             <li>
-              <Link href="/dashboard" className="hover:text-blue-600 transition-colors">
+              <Link
+                href="/dashboard"
+                className="hover:text-blue-600 transition-colors"
+              >
                 Dashboard
               </Link>
             </li>
             <li>/</li>
             <li>
-              <Link href="/modules/polynomials" className="hover:text-blue-600 transition-colors">
+              <Link
+                href="/modules/polynomials"
+                className="hover:text-blue-600 transition-colors"
+              >
                 Polynomials
               </Link>
             </li>
             <li>/</li>
-            <li className="text-gray-900 font-medium">Degree of a Polynomial</li>
+            <li className="text-gray-900 font-medium">
+              Degree of a Polynomial
+            </li>
           </ol>
         </nav>
 
@@ -51,7 +65,9 @@ export default function Unit2() {
             </p>
 
             <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Example:</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                Example:
+              </h3>
               <div className="bg-white p-4 rounded-lg border border-blue-200">
                 <p className="text-2xl font-mono text-center text-blue-700 font-bold">
                   3x² + 2x + 5
@@ -60,7 +76,8 @@ export default function Unit2() {
             </div>
 
             <p className="text-lg text-gray-700 leading-relaxed">
-              Yahan <span className="font-semibold text-gray-900">x²</span> sabse badi power hai, isliye degree{' '}
+              Yahan <span className="font-semibold text-gray-900">x²</span>{" "}
+              sabse badi power hai, isliye degree{" "}
               <span className="font-semibold text-gray-900">2</span> hai.
             </p>
           </div>
@@ -68,13 +85,13 @@ export default function Unit2() {
 
         {/* Navigation */}
         <div className="flex items-center justify-between">
-          <Link 
+          <Link
             href="/modules/polynomials/unit-1"
             className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
           >
             ← Previous Unit
           </Link>
-          <Link 
+          <Link
             href="/modules/polynomials/unit-3"
             className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium shadow-md"
           >
@@ -83,5 +100,5 @@ export default function Unit2() {
         </div>
       </main>
     </div>
-  )
+  );
 }

@@ -1,48 +1,66 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useXp } from '@/app/context/xp-context'
-import Link from 'next/link'
-import Header from '../../../components/Header'
+import { useState } from "react";
+import { useXp } from "@/app/context/xp-context";
+import Link from "next/link";
+import Header from "../../../components/Header";
+import { awardXpOnce, markModuleQuizPassed } from "@/app/lib/backend";
 
 export default function PolynomialQuiz() {
-  const [selected, setSelected] = useState<string | null>(null)
-  const [submitted, setSubmitted] = useState(false)
+  const [selected, setSelected] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
-  const correctAnswer = 'B'
-  const xpEarned = 100
-  const { setXp } = useXp()
+  const correctAnswer = "B";
+  const xpEarned = 100;
+  const { setXp } = useXp();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selected === correctAnswer) {
-      setXp((prev: number) => prev + xpEarned)
+      const { awarded } = await awardXpOnce({
+        eventKey: "quiz:polynomials:passed",
+        delta: xpEarned,
+        moduleSlug: "polynomials",
+      });
+
+      if (awarded) {
+        setXp((prev: number) => prev + xpEarned);
+      }
+
+      await markModuleQuizPassed("polynomials");
     }
-    setSubmitted(true)
-  }
+
+    setSubmitted(true);
+  };
 
   const options = [
-    { value: 'A', label: '1' },
-    { value: 'B', label: '2' },
-    { value: 'C', label: '3' },
-    { value: 'D', label: '0' }
-  ]
+    { value: "A", label: "1" },
+    { value: "B", label: "2" },
+    { value: "C", label: "3" },
+    { value: "D", label: "0" },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
       <Header />
-      
+
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="mb-6">
           <ol className="flex items-center space-x-2 text-sm text-gray-600">
             <li>
-              <Link href="/dashboard" className="hover:text-blue-600 transition-colors">
+              <Link
+                href="/dashboard"
+                className="hover:text-blue-600 transition-colors"
+              >
                 Dashboard
               </Link>
             </li>
             <li>/</li>
             <li>
-              <Link href="/modules/polynomials" className="hover:text-blue-600 transition-colors">
+              <Link
+                href="/modules/polynomials"
+                className="hover:text-blue-600 transition-colors"
+              >
                 Polynomials
               </Link>
             </li>
@@ -70,7 +88,11 @@ export default function PolynomialQuiz() {
                 Question:
               </h2>
               <p className="text-lg text-gray-700">
-                Polynomial <span className="font-mono font-bold text-blue-700">2x² + 3x + 1</span> ka degree kya hai?
+                Polynomial{" "}
+                <span className="font-mono font-bold text-blue-700">
+                  2x² + 3x + 1
+                </span>{" "}
+                ka degree kya hai?
               </p>
             </div>
 
@@ -80,8 +102,8 @@ export default function PolynomialQuiz() {
                   key={option.value}
                   className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     selected === option.value
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
                   }`}
                 >
                   <input
@@ -104,8 +126,8 @@ export default function PolynomialQuiz() {
               disabled={!selected}
               className={`w-full py-3 rounded-lg font-semibold transition-all ${
                 selected
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-md'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-md"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
               Submit Quiz
@@ -128,7 +150,9 @@ export default function PolynomialQuiz() {
                 </p>
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6 inline-block">
                   <p className="text-sm text-gray-600 mb-1">XP Earned</p>
-                  <p className="text-2xl font-bold text-green-700">+{xpEarned} XP</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    +{xpEarned} XP
+                  </p>
                 </div>
                 <Link href="/dashboard">
                   <button className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md">
@@ -155,8 +179,8 @@ export default function PolynomialQuiz() {
                   </Link>
                   <button
                     onClick={() => {
-                      setSubmitted(false)
-                      setSelected(null)
+                      setSubmitted(false);
+                      setSelected(null);
                     }}
                     className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md"
                   >
@@ -169,5 +193,5 @@ export default function PolynomialQuiz() {
         )}
       </main>
     </div>
-  )
+  );
 }

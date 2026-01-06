@@ -54,6 +54,23 @@ a, button {
   transition: all 0.2s ease-in-out;
 }
 
+/* Pointer cursor for all buttons */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+input[type="reset"]:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* Focus styles for accessibility */
 *:focus-visible {
   outline: 2px solid #3b82f6;

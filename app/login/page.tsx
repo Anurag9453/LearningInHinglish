@@ -1,12 +1,49 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { getSupabase } from '../lib/supabase'
-import { getRedirectUrl } from '../lib/utils'
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { getSupabase } from "../lib/supabase";
+import { getRedirectUrl } from "../lib/utils";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async () => {
+    setError(null);
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      setError("Supabase is not configured");
+      return;
+    }
+
+    if (!email.trim() || !password) {
+      setError("Please enter email and password");
+      return;
+    }
+
+    setLoading(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    setLoading(false);
+
+    if (signInError) {
+      setError(signInError.message);
+      return;
+    }
+
+    router.push("/dashboard");
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 px-4">
+    <div className="min-h-screen app-bg flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -14,12 +51,14 @@ export default function LoginPage() {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">H</span>
             </div>
-            <span className="text-2xl font-bold text-gray-900">HinglishLearn</span>
+            <span className="text-2xl font-bold text-gray-900">
+              HinglishLearn
+            </span>
           </Link>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-lg">
+        <div className="ui-card p-8">
           <h1 className="text-2xl font-bold text-center mb-2 text-gray-900">
             Welcome Back
           </h1>
@@ -33,8 +72,12 @@ export default function LoginPage() {
               Email
             </label>
             <input
-              className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              className="ui-input"
               placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              inputMode="email"
             />
           </div>
 
@@ -45,13 +88,26 @@ export default function LoginPage() {
             </label>
             <input
               type="password"
-              className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              className="ui-input"
               placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
             />
           </div>
 
-          <button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md mb-4">
-            Login
+          {error && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            className="w-full ui-btn-primary py-3 text-base mb-4 disabled:opacity-70"
+          >
+            {loading ? "Logging in…" : "Login"}
           </button>
 
           {/* Divider */}
@@ -64,21 +120,32 @@ export default function LoginPage() {
           {/* Google Login */}
           <button
             onClick={async () => {
-              const supabase = getSupabase()
-              if (!supabase) return
+              const supabase = getSupabase();
+              if (!supabase) {
+                setError("Supabase is not configured");
+                return;
+              }
 
-              await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                  redirectTo: getRedirectUrl('/dashboard'),
-                },
-              })
+              setError(null);
+
+              const { error: oauthError } = await supabase.auth.signInWithOAuth(
+                {
+                  provider: "google",
+                  options: {
+                    redirectTo: getRedirectUrl("/dashboard"),
+                  },
+                }
+              );
+
+              if (oauthError) {
+                setError(oauthError.message);
+              }
             }}
-            className="w-full border-2 border-gray-300 py-3 rounded-lg flex items-center justify-center gap-3 font-medium text-gray-700 hover:border-gray-400 hover:bg-gray-50 transition-all"
+            className="w-full ui-btn-outline py-3 flex items-center justify-center gap-3 font-semibold"
           >
-            <img 
-              src="https://www.svgrepo.com/show/475656/google-color.svg" 
-              width="20" 
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              width="20"
               height="20"
               alt="Google"
               className="w-5 h-5"
@@ -88,13 +155,16 @@ export default function LoginPage() {
           </button>
 
           <p className="text-center text-sm text-gray-600 mt-6">
-            Don't have an account?{' '}
-            <Link href="/signup" className="text-blue-600 font-semibold hover:text-blue-700">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/signup"
+              className="text-blue-600 font-semibold hover:text-blue-700"
+            >
               Sign up
             </Link>
           </p>
         </div>
       </div>
     </div>
-  )
+  );
 }

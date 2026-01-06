@@ -8,12 +8,25 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'www.svgrepo.com',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "www.svgrepo.com",
+        pathname: "/**",
       },
     ],
-    formats: ['image/avif', 'image/webp'],
+    formats: ["image/avif", "image/webp"],
+  },
+  async headers() {
+    return [
+      {
+        source: "/api/catalog/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=300, stale-while-revalidate=86400",
+          },
+        ],
+      },
+    ];
   },
 };
 
