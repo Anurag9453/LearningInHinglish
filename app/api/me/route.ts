@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 function getBearerToken(req: Request): string | null {
-  const header = req.headers.get("authorization") || req.headers.get("Authorization");
+  const header =
+    req.headers.get("authorization") || req.headers.get("Authorization");
   if (!header) return null;
   const m = /^Bearer\s+(.+)$/i.exec(header);
   return m?.[1]?.trim() ?? null;
@@ -55,10 +56,7 @@ export async function GET(req: Request) {
 
   if (profileError) {
     // RLS should allow this for the user, so treat as server error.
-    return NextResponse.json(
-      { error: profileError.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: profileError.message }, { status: 500 });
   }
 
   return NextResponse.json({ user, profile: profile ?? null });

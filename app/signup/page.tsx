@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getSupabase } from "../lib/supabase";
 import { getRedirectUrl } from "../lib/utils";
-import { fetchSiteContent, type AuthContent, type HeaderContent } from "../lib/backend";
+import {
+  fetchSiteContent,
+  type AuthContent,
+  type HeaderContent,
+} from "../lib/backend";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -123,9 +127,7 @@ export default function SignupPage() {
           <h1 className="text-2xl font-black text-center mb-2 text-gray-900">
             {signupTitle}
           </h1>
-          <p className="text-center text-gray-600 mb-6">
-            {signupSubtitle}
-          </p>
+          <p className="text-center text-gray-600 mb-6">{signupSubtitle}</p>
 
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>

@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getSupabase } from "../lib/supabase";
 import { getRedirectUrl } from "../lib/utils";
-import { fetchSiteContent, type AuthContent, type HeaderContent } from "../lib/backend";
+import {
+  fetchSiteContent,
+  type AuthContent,
+  type HeaderContent,
+} from "../lib/backend";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -95,9 +99,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-center mb-2 text-gray-900">
             {loginTitle}
           </h1>
-          <p className="text-center text-gray-600 mb-6">
-            {loginSubtitle}
-          </p>
+          <p className="text-center text-gray-600 mb-6">{loginSubtitle}</p>
 
           {/* Email */}
           <div className="mb-4">

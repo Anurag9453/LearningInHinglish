@@ -108,7 +108,9 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">{navLogoLetter}</span>
+                <span className="text-white font-bold text-lg">
+                  {navLogoLetter}
+                </span>
               </div>
               <span className="text-xl font-bold text-gray-900">
                 {brandName}
