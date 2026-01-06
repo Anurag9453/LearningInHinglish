@@ -326,21 +326,21 @@ export async function markUnitCompleted(
   moduleSlug: string,
   unitSlug: string
 ): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase) return;
+  const token = await getAccessToken();
+  if (!token) return;
 
-  const userId = await getCurrentUserId();
-  if (!userId) return;
-
-  await supabase.from("unit_progress").upsert(
-    {
-      user_id: userId,
-      module_slug: moduleSlug,
-      unit_slug: unitSlug,
-      completed_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,module_slug,unit_slug" }
-  );
+  try {
+    await fetch("/api/progress/unit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ moduleSlug, unitSlug }),
+    });
+  } catch {
+    // ignore
+  }
 }
 
 export async function fetchCompletedUnits(
@@ -395,18 +395,19 @@ export async function awardXpOnce(params: {
 }
 
 export async function markModuleQuizPassed(moduleSlug: string): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase) return;
+  const token = await getAccessToken();
+  if (!token) return;
 
-  const userId = await getCurrentUserId();
-  if (!userId) return;
-
-  await supabase.from("module_progress").upsert(
-    {
-      user_id: userId,
-      module_slug: moduleSlug,
-      quiz_passed_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,module_slug" }
-  );
+  try {
+    await fetch("/api/progress/module", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ moduleSlug }),
+    });
+  } catch {
+    // ignore
+  }
 }
