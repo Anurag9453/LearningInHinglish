@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { getSupabase } from "../lib/supabase";
@@ -214,13 +215,13 @@ export default function SignupPage() {
             }}
             className="w-full ui-btn-outline py-3 flex items-center justify-center gap-3 font-semibold"
           >
-            <img
+            <Image
               src="https://www.svgrepo.com/show/475656/google-color.svg"
-              width="20"
-              height="20"
+              width={20}
+              height={20}
               alt="Google"
               className="w-5 h-5"
-              loading="lazy"
+              priority={false}
             />
             Sign up with Google
           </button>

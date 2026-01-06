@@ -28,12 +28,14 @@ A modern learning platform designed to help students learn in simple Hinglish.
 ### Installation
 
 1. Clone the repository
+
 ```bash
 git clone <your-repo-url>
 cd hinglish-learning-platform
 ```
 
 2. Install dependencies
+
 ```bash
 npm install
 ```
@@ -48,7 +50,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
+`NEXT_PUBLIC_APP_URL` is optional for local development (the app will fall back to the current browser origin), but setting it explicitly can make OAuth/email redirects more predictable.
+
 4. Run the development server
+
 ```bash
 npm run dev
 ```
@@ -60,6 +65,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### Step 1: Push to GitHub
 
 1. Initialize git (if not already done):
+
 ```bash
 git init
 git add .
@@ -67,6 +73,7 @@ git commit -m "Initial commit"
 ```
 
 2. Create a repository on GitHub and push:
+
 ```bash
 git remote add origin <your-github-repo-url>
 git push -u origin main
@@ -78,9 +85,10 @@ git push -u origin main
 2. Click "New Project"
 3. Import your GitHub repository
 4. Add environment variables:
+
    - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anon key
-   - `NEXT_PUBLIC_APP_URL` - Your Vercel deployment URL (e.g., `https://your-app.vercel.app`)
+   - `NEXT_PUBLIC_APP_URL` (optional) - Your canonical app URL (e.g., `https://your-app.vercel.app`). If not set, the app uses the current origin for OAuth redirects.
 
 5. Click "Deploy"
 
@@ -92,13 +100,19 @@ git push -u origin main
    - `https://your-app.vercel.app/dashboard`
    - `https://your-app.vercel.app/**`
 
+Notes:
+
+- If you use Vercel Preview Deployments, their URLs change per-branch/PR. You can either:
+  - Add each preview URL to Supabase Redirect URLs, or
+  - Use only a fixed `NEXT_PUBLIC_APP_URL` (so redirects always go to your canonical domain), and test OAuth on the production domain.
+
 ## Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Yes |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key | Yes |
-| `NEXT_PUBLIC_APP_URL` | Your application URL (for OAuth redirects) | Yes (for production) |
+| Variable                        | Description                                                         | Required |
+| ------------------------------- | ------------------------------------------------------------------- | -------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL                                           | Yes      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key                                         | Yes      |
+| `NEXT_PUBLIC_APP_URL`           | Canonical application URL (used for OAuth/email redirects when set) | Optional |
 
 ## Project Structure
 
