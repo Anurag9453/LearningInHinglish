@@ -3,6 +3,7 @@
 import Link from "next/link";
 import CourseCard from "./components/CourseCard";
 import { useEffect, useMemo, useState } from "react";
+import { getSupabase } from "./lib/supabase";
 import {
   fetchHomePayload,
   type HomeContent,
@@ -14,91 +15,86 @@ export default function Home() {
   const [content, setContent] = useState<HomeContent | null>(null);
   const [header, setHeader] = useState<HeaderContent | null>(null);
   const [modules, setModules] = useState<ModuleRow[]>([]);
+  const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetchHomePayload().then((payload) => {
+
+    fetchHomePayload()
+      .then((payload) => {
+        if (cancelled) return;
+        setContent(payload.content);
+        setHeader(payload.header);
+        setModules(payload.modules);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setContent(null);
+        setHeader(null);
+        setModules([]);
+      });
+
+    (async () => {
+      const supabase = getSupabase();
+      if (!supabase) {
+        if (!cancelled) setIsAuthed(false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.getSession();
       if (cancelled) return;
-      setContent(payload.content);
-      setHeader(payload.header);
-      setModules(payload.modules);
-    });
+      if (error) {
+        setIsAuthed(false);
+        return;
+      }
+
+      setIsAuthed(Boolean(data.session));
+    })();
+
     return () => {
       cancelled = true;
     };
   }, []);
 
   const courses = useMemo(() => {
-    if (modules.length) {
-      return modules.map((m) => ({
-        title: m.title,
-        description: m.description,
-        href: m.slug === "polynomials" ? "/modules/polynomials" : "/dashboard",
-        gradient: m.gradient ?? "from-blue-500 to-indigo-600",
-        imageUrl: m.image_url ?? undefined,
-      }));
-    }
-
-    // Fallback for first render/offline
-    return [
-      {
-        title: "Mathematics Class 10",
-        description:
-          "Class 10 Mathematics ko step by step samjhein. Polynomials, linear equations, aur real numbers jaise topics ko Hinglish mein seekhein.",
-        href: "/dashboard",
-        gradient: "from-blue-500 to-indigo-600",
-      },
-      {
-        title: "Learn Android",
-        description:
-          "Android app development seekhein from scratch. Java/Kotlin, UI design, aur app publishing tak - sab kuch Hinglish mein.",
-        href: "/dashboard",
-        gradient: "from-green-500 to-emerald-600",
-      },
-      {
-        title: "Zero to Hero in Docker and Kubernetes",
-        description:
-          "Docker containers aur Kubernetes orchestration ko samjhein. DevOps concepts ko practical examples ke saath seekhein.",
-        href: "/dashboard",
-        gradient: "from-cyan-500 to-blue-600",
-      },
-      {
-        title: "Linear Algebra",
-        description:
-          "Linear algebra ke fundamentals ko samjhein. Vectors, matrices, transformations - sab kuch easy Hinglish explanation ke saath.",
-        href: "/dashboard",
-        gradient: "from-purple-500 to-pink-600",
-      },
-      {
-        title: "Numpy, Pandas",
-        description:
-          "Python data science libraries - NumPy aur Pandas ko seekhein. Data manipulation aur analysis ke liye complete guide.",
-        href: "/dashboard",
-        gradient: "from-orange-500 to-red-600",
-      },
-    ];
+    return modules.map((m) => ({
+      title: m.title,
+      description: m.description,
+      href: m.slug === "polynomials" ? "/modules/polynomials" : "/dashboard",
+      gradient: m.gradient ?? "from-blue-500 to-indigo-600",
+      imageUrl: m.image_url ?? undefined,
+    }));
   }, [modules]);
 
-  const brandName = content?.brandName ?? "HinglishLearn";
-  const navLoginText = content?.navLoginText ?? "Login";
-  const heroTitle = content?.heroTitle ?? "Learn School Subjects in Hinglish";
-  const heroHighlightWord = content?.heroHighlightWord ?? "Hinglish";
-  const heroSubtitle =
-    content?.heroSubtitle ??
-    "Ab complex concepts ko samajhna hoga easy. Class 10 Mathematics jaise subjects seekho simple Hinglish language mein — step by step.";
-  const primaryCtaText = content?.primaryCtaText ?? "Start Learning";
-  const secondaryCtaText = content?.secondaryCtaText ?? "Sign Up Free";
-  const coursesHeading = content?.coursesHeading ?? "Available Courses";
-  const coursesDescription =
-    content?.coursesDescription ??
-    "Choose from our collection of courses designed to help you learn in simple Hinglish";
-  const footerText =
-    content?.footerText ?? "© 2026 HinglishLearn. Built for Indian learners 🇮🇳";
+  const brandName = header?.brandName ?? content?.brandName ?? "";
+  const heroTitle = content?.heroTitle ?? "";
+  const heroHighlightWord = content?.heroHighlightWord ?? "";
+  const heroSubtitle = content?.heroSubtitle ?? "";
+  const primaryCtaText = content?.primaryCtaText ?? "";
+  const secondaryCtaText = content?.secondaryCtaText ?? "";
+  const coursesHeading = content?.coursesHeading ?? "";
+  const coursesDescription = content?.coursesDescription ?? "";
+  const footerText = content?.footerText ?? "";
 
   const navLogoLetter =
     header?.logoLetter?.trim()?.slice(0, 1).toUpperCase() ||
-    brandName.trim().slice(0, 1).toUpperCase() ||
-    "H";
+    brandName.trim().slice(0, 1).toUpperCase();
+
+  const navAction =
+    isAuthed === true
+      ? { href: "/dashboard", label: header?.dashboardLabel ?? "Dashboard" }
+      : { href: "/login", label: content?.navLoginText ?? "Login" };
+
+  const isReady =
+    content !== null && header !== null && isAuthed !== null && navLogoLetter;
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center text-gray-600">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -116,9 +112,9 @@ export default function Home() {
                 {brandName}
               </span>
             </div>
-            <Link href="/login">
+            <Link href={navAction.href}>
               <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
-                {navLoginText}
+                {navAction.label}
               </button>
             </Link>
           </div>
@@ -169,18 +165,22 @@ export default function Home() {
           </div>
 
           {/* Course Tiles Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {courses.map((course, idx) => (
-              <CourseCard
-                key={idx}
-                title={course.title}
-                description={course.description}
-                href={course.href}
-                gradient={course.gradient}
-                imageUrl={(course as { imageUrl?: string }).imageUrl}
-              />
-            ))}
-          </div>
+          {courses.length ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+              {courses.map((course, idx) => (
+                <CourseCard
+                  key={idx}
+                  title={course.title}
+                  description={course.description}
+                  href={course.href}
+                  gradient={course.gradient}
+                  imageUrl={(course as { imageUrl?: string }).imageUrl}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-gray-600">No courses found.</div>
+          )}
         </div>
       </section>
 
