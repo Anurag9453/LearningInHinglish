@@ -83,5 +83,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true });
+  // Award XP once per unit completion (deduped by xp_events unique index)
+  const xpInsert = await supabase.from("xp_events").insert({
+    event_key: "unit:completed",
+    module_slug: payload.moduleSlug.trim(),
+    unit_slug: payload.unitSlug.trim(),
+  });
+
+  const awardedXp = !xpInsert.error;
+  const xpDeltaRes = await supabase
+    .from("xp_rules")
+    .select("delta")
+    .eq("event_key", "unit:completed")
+    .maybeSingle();
+
+  // Badges (best-effort)
+  try {
+    const totalUnits = await supabase
+      .from("unit_progress")
+      .select("unit_slug", { count: "exact", head: true });
+
+    const completed = Number(totalUnits.count ?? 0);
+    if (completed >= 1) {
+      await supabase.from("user_badges").insert({ badge_key: "first_unit" });
+    }
+    if (completed >= 3) {
+      await supabase.from("user_badges").insert({ badge_key: "three_units" });
+    }
+  } catch {
+    // ignore
+  }
+
+  return NextResponse.json({
+    ok: true,
+    awardedXp,
+    delta: Number(xpDeltaRes.data?.delta ?? 0),
+  });
 }

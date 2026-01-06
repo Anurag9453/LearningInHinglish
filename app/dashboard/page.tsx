@@ -10,18 +10,20 @@ import {
   fetchModules,
   fetchMyStats,
   fetchSiteContent,
+  tickDailyStreak,
   type DashboardContent,
   type ModuleRow,
 } from "../lib/backend";
 
 export default function DashboardPage() {
-  const { xp } = useXp();
+  const { xp, setXp } = useXp();
   const router = useRouter();
   const [modules, setModules] = useState<ModuleRow[]>([]);
   const [content, setContent] = useState<DashboardContent | null>(null);
-  const [stats, setStats] = useState<{ unitsCompleted: number; coursesCompleted: number }>(
-    { unitsCompleted: 0, coursesCompleted: 0 }
-  );
+  const [stats, setStats] = useState<{
+    unitsCompleted: number;
+    coursesCompleted: number;
+  }>({ unitsCompleted: 0, coursesCompleted: 0 });
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -48,6 +50,18 @@ export default function DashboardPage() {
   useEffect(() => {
     let cancelled = false;
 
+    // Daily streak tick (awards XP once/day)
+    tickDailyStreak()
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) {
+          setXp(res.xp);
+        }
+      })
+      .catch(() => {
+        // ignore
+      });
+
     fetchSiteContent<DashboardContent>("dashboard")
       .then((data) => {
         if (cancelled) return;
@@ -72,7 +86,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setXp]);
 
   const fallbackModules: ModuleRow[] = [
     {
@@ -97,9 +111,11 @@ export default function DashboardPage() {
 
   const welcomeTitle = content?.welcomeTitle ?? "Welcome Back! 👋";
   const welcomeSubtitle =
-    content?.welcomeSubtitle ?? "Choose a course to start your learning journey";
+    content?.welcomeSubtitle ??
+    "Choose a course to start your learning journey";
   const totalXpLabel = content?.totalXpLabel ?? "Total XP";
-  const coursesCompletedLabel = content?.coursesCompletedLabel ?? "Courses Completed";
+  const coursesCompletedLabel =
+    content?.coursesCompletedLabel ?? "Courses Completed";
   const unitsCompletedLabel = content?.unitsCompletedLabel ?? "Units Completed";
   const coursesHeading = content?.coursesHeading ?? "Available Courses";
   const coursesDescription =
@@ -115,9 +131,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             {welcomeTitle}
           </h1>
-          <p className="text-lg text-gray-600">
-            {welcomeSubtitle}
-          </p>
+          <p className="text-lg text-gray-600">{welcomeSubtitle}</p>
         </div>
 
         {/* Stats Cards */}

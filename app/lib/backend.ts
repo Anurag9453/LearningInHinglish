@@ -252,6 +252,13 @@ export async function fetchUnits(moduleSlug: string): Promise<UnitRow[]> {
 }
 
 export async function fetchMyXp(): Promise<number> {
+  try {
+    const me = await fetchMe();
+    if (me?.profile) return Number(me.profile.xp ?? 0);
+  } catch {
+    // ignore
+  }
+
   const supabase = getSupabase();
   if (!supabase) return 0;
 
@@ -265,6 +272,73 @@ export async function fetchMyXp(): Promise<number> {
     .maybeSingle();
 
   return Number(data?.xp ?? 0);
+}
+
+export async function tickDailyStreak(): Promise<
+  | {
+      ok: true;
+      xp: number;
+      delta: number;
+      awardedXp: boolean;
+      streak: { current: number; best: number; lastActive: string };
+    }
+  | { ok: false }
+> {
+  const token = await getAccessToken();
+  if (!token) return { ok: false };
+
+  try {
+    const res = await fetch("/api/streak/tick", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) return { ok: false };
+    return (await res.json()) as {
+      ok: true;
+      xp: number;
+      delta: number;
+      awardedXp: boolean;
+      streak: { current: number; best: number; lastActive: string };
+    };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function fetchMyBadges(): Promise<{
+  badges: Array<{
+    badge_key: string;
+    title: string;
+    description: string;
+    icon: string | null;
+  }>;
+  earned: Array<{ badge_key: string; awarded_at: string }>;
+} | null> {
+  const token = await getAccessToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch("/api/badges/me", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as {
+      badges: Array<{
+        badge_key: string;
+        title: string;
+        description: string;
+        icon: string | null;
+      }>;
+      earned: Array<{ badge_key: string; awarded_at: string }>;
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchMyStats(): Promise<{

@@ -86,9 +86,25 @@ create table if not exists public.xp_events (
   delta int not null,
   module_slug text,
   unit_slug text,
+  event_date date,
   created_at timestamptz not null default now(),
   unique(user_id, event_key)
 );
+
+-- If you already ran this schema before, ensure columns/constraints exist
+alter table public.xp_events add column if not exists event_date date;
+
+-- Replace the legacy unique(user_id,event_key) constraint with a robust dedupe index
+-- (Postgres UNIQUE constraints treat NULLs as distinct, so we normalize with COALESCE).
+alter table public.xp_events drop constraint if exists xp_events_user_id_event_key_key;
+create unique index if not exists xp_events_dedupe_idx
+  on public.xp_events (
+    user_id,
+    event_key,
+    coalesce(module_slug, ''),
+    coalesce(unit_slug, ''),
+    coalesce(event_date, date '0001-01-01')
+  );
 
 -- XP rules: the DB decides the XP delta for each event_key.
 create table if not exists public.xp_rules (
@@ -152,6 +168,66 @@ create table if not exists public.module_progress (
   quiz_passed_at timestamptz,
   primary key (user_id, module_slug)
 );
+
+-- Streaks (per-user)
+create table if not exists public.user_streaks (
+  user_id uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  current_streak int not null default 0,
+  best_streak int not null default 0,
+  last_active date
+);
+
+alter table public.user_streaks enable row level security;
+
+do $$ begin
+  create policy "user_streaks read own" on public.user_streaks
+    for select to authenticated
+    using (user_id = auth.uid());
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "user_streaks upsert own" on public.user_streaks
+    for all to authenticated
+    using (user_id = auth.uid())
+    with check (user_id = auth.uid());
+exception when duplicate_object then null; end $$;
+
+-- Badges
+create table if not exists public.badges (
+  badge_key text primary key,
+  title text not null,
+  description text not null,
+  icon text,
+  sort_order int not null default 0
+);
+
+create table if not exists public.user_badges (
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  badge_key text not null references public.badges(badge_key) on delete cascade,
+  awarded_at timestamptz not null default now(),
+  primary key (user_id, badge_key)
+);
+
+alter table public.badges enable row level security;
+alter table public.user_badges enable row level security;
+
+do $$ begin
+  create policy "public read badges" on public.badges
+    for select to anon, authenticated
+    using (true);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "user_badges read own" on public.user_badges
+    for select to authenticated
+    using (user_id = auth.uid());
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create policy "user_badges insert own" on public.user_badges
+    for insert to authenticated
+    with check (user_id = auth.uid());
+exception when duplicate_object then null; end $$;
 
 alter table public.profiles enable row level security;
 alter table public.xp_events enable row level security;
@@ -335,9 +411,25 @@ set title = excluded.title,
 -- Seed XP rules (safe to re-run)
 insert into public.xp_rules (event_key, delta)
 values
-  ('quiz:polynomials:passed', 100)
+  ('quiz:polynomials:passed', 100),
+  ('unit:completed', 10),
+  ('module:completed', 100),
+  ('streak:daily', 5)
 on conflict (event_key) do update
 set delta = excluded.delta;
+
+-- Seed badges (safe to re-run)
+insert into public.badges (badge_key, title, description, icon, sort_order)
+values
+  ('first_unit', 'First Unit Completed', 'You completed your first unit.', '✅', 1),
+  ('three_units', '3 Units Completed', 'You completed 3 units.', '🏁', 2),
+  ('first_module', 'First Module Completed', 'You completed your first module.', '🏆', 3),
+  ('streak_7', '7-Day Streak', 'You maintained a 7-day learning streak.', '🔥', 4)
+on conflict (badge_key) do update
+set title = excluded.title,
+    description = excluded.description,
+    icon = excluded.icon,
+    sort_order = excluded.sort_order;
 
 -- Seed site content used by Home (safe to re-run)
 insert into public.site_content (key, value, updated_at)

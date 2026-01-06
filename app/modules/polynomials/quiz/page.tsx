@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useXp } from "@/app/context/xp-context";
 import Link from "next/link";
 import Header from "../../../components/Header";
-import { awardXpOnce, markModuleQuizPassed } from "@/app/lib/backend";
+import {
+  awardXpOnce,
+  fetchMyXp,
+  markModuleQuizPassed,
+} from "@/app/lib/backend";
 
 export default function PolynomialQuiz() {
   const [selected, setSelected] = useState<string | null>(null);
@@ -16,17 +20,18 @@ export default function PolynomialQuiz() {
 
   const handleSubmit = async () => {
     if (selected === correctAnswer) {
-      const { awarded } = await awardXpOnce({
+      await markModuleQuizPassed("polynomials");
+
+      // Award XP via server rules and then hydrate latest XP
+      // (keeps UI consistent if XP values change in xp_rules)
+      await awardXpOnce({
         eventKey: "quiz:polynomials:passed",
         delta: xpEarned,
         moduleSlug: "polynomials",
       });
 
-      if (awarded) {
-        setXp((prev: number) => prev + xpEarned);
-      }
-
-      await markModuleQuizPassed("polynomials");
+      const latestXp = await fetchMyXp();
+      setXp(latestXp);
     }
 
     setSubmitted(true);

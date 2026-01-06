@@ -79,5 +79,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true });
+  // Award XP once per module completion
+  const xpInsert = await supabase.from("xp_events").insert({
+    event_key: "module:completed",
+    module_slug: payload.moduleSlug.trim(),
+  });
+  const awardedXp = !xpInsert.error;
+
+  const xpDeltaRes = await supabase
+    .from("xp_rules")
+    .select("delta")
+    .eq("event_key", "module:completed")
+    .maybeSingle();
+
+  // Badge: first module
+  try {
+    const totalModules = await supabase
+      .from("module_progress")
+      .select("module_slug", { count: "exact", head: true })
+      .not("quiz_passed_at", "is", null);
+
+    const completed = Number(totalModules.count ?? 0);
+    if (completed >= 1) {
+      await supabase.from("user_badges").insert({ badge_key: "first_module" });
+    }
+  } catch {
+    // ignore
+  }
+
+  return NextResponse.json({
+    ok: true,
+    awardedXp,
+    delta: Number(xpDeltaRes.data?.delta ?? 0),
+  });
 }
