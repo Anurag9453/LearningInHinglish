@@ -17,7 +17,7 @@ function getServerSupabase() {
 export async function GET() {
   const supabase = getServerSupabase();
 
-  const [modulesRes, contentRes] = await Promise.all([
+  const [modulesRes, contentRowsRes] = await Promise.all([
     supabase
       .from("modules")
       .select("slug,title,description,gradient,icon,image_url,sort_order")
@@ -25,8 +25,7 @@ export async function GET() {
     supabase
       .from("site_content")
       .select("key,value")
-      .eq("key", "home")
-      .maybeSingle(),
+      .in("key", ["home", "header"]),
   ]);
 
   if (modulesRes.error) {
@@ -36,10 +35,11 @@ export async function GET() {
     );
   }
 
-  if (contentRes.error) {
+  if (contentRowsRes.error) {
     // Content is optional; don't fail the page if it's missing.
     const res = NextResponse.json({
       content: null,
+      header: null,
       modules: modulesRes.data ?? [],
     });
     res.headers.set(
@@ -49,8 +49,13 @@ export async function GET() {
     return res;
   }
 
+  const rows = (contentRowsRes.data ?? []) as Array<{ key: string; value: unknown }>;
+  const homeRow = rows.find((r) => r.key === "home");
+  const headerRow = rows.find((r) => r.key === "header");
+
   const res = NextResponse.json({
-    content: (contentRes.data?.value ?? null) as unknown,
+    content: (homeRow?.value ?? null) as unknown,
+    header: (headerRow?.value ?? null) as unknown,
     modules: modulesRes.data ?? [],
   });
 

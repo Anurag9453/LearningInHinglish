@@ -21,6 +21,15 @@ export type HomeContent = {
   footerText?: string;
 };
 
+export type HeaderContent = {
+  brandName?: string;
+  logoLetter?: string;
+  dashboardLabel?: string;
+  logoutLabel?: string;
+};
+
+const siteContentCache = new Map<string, unknown>();
+
 export type UnitRow = {
   module_slug: string;
   unit_slug: string;
@@ -103,6 +112,7 @@ export async function fetchModule(
 
 export async function fetchHomePayload(): Promise<{
   content: HomeContent | null;
+  header: HeaderContent | null;
   modules: ModuleRow[];
 }> {
   try {
@@ -110,10 +120,16 @@ export async function fetchHomePayload(): Promise<{
     if (res.ok) {
       const json = (await res.json()) as {
         content: HomeContent | null;
+        header?: HeaderContent | null;
         modules: ModuleRow[];
       };
+
+      if (json.content != null) siteContentCache.set("home", json.content);
+      if (json.header != null) siteContentCache.set("header", json.header);
+
       return {
         content: (json.content ?? null) as HomeContent | null,
+        header: (json.header ?? null) as HeaderContent | null,
         modules: json.modules ?? [],
       };
     }
@@ -123,16 +139,21 @@ export async function fetchHomePayload(): Promise<{
 
   // Fallback: modules from backend; no content.
   const modules = await fetchModules();
-  return { content: null, modules };
+  return { content: null, header: null, modules };
 }
 
 export async function fetchSiteContent<T = unknown>(
   key: string
 ): Promise<T | null> {
+  if (siteContentCache.has(key)) {
+    return (siteContentCache.get(key) ?? null) as T | null;
+  }
+
   try {
     const res = await fetch(`/api/catalog/content/${encodeURIComponent(key)}`);
     if (res.ok) {
       const json = (await res.json()) as { content: T | null };
+      if (json.content != null) siteContentCache.set(key, json.content as unknown);
       return (json.content ?? null) as T | null;
     }
   } catch {
@@ -148,7 +169,9 @@ export async function fetchSiteContent<T = unknown>(
     .eq("key", key)
     .maybeSingle();
 
-  return (data?.value ?? null) as T | null;
+  const value = (data?.value ?? null) as T | null;
+  if (value != null) siteContentCache.set(key, value as unknown);
+  return value;
 }
 
 export async function fetchUnits(moduleSlug: string): Promise<UnitRow[]> {

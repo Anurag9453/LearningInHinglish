@@ -4,15 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useXp } from "../context/xp-context";
-import { fetchSiteContent } from "../lib/backend";
+import { fetchSiteContent, type HeaderContent } from "../lib/backend";
 import { getSupabase } from "../lib/supabase";
-
-type HeaderContent = {
-  brandName?: string;
-  logoLetter?: string;
-  dashboardLabel?: string;
-  logoutLabel?: string;
-};
 
 export default function Header() {
   const router = useRouter();
