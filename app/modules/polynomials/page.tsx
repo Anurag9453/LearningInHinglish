@@ -4,9 +4,19 @@ import Link from "next/link";
 import Header from "../../components/Header";
 import UnitCard from "../../components/UnitCard";
 import { useEffect, useMemo, useState } from "react";
-import { fetchCompletedUnits, fetchUnits } from "@/app/lib/backend";
+import {
+  fetchCompletedUnits,
+  fetchModule,
+  fetchUnits,
+} from "@/app/lib/backend";
 
 export default function PolynomialsModule() {
+  const [moduleRow, setModuleRow] = useState<{
+    title: string;
+    description: string;
+    gradient: string | null;
+    icon: string | null;
+  } | null>(null);
   const [unitRows, setUnitRows] = useState<
     Array<{
       unit_slug: string;
@@ -21,12 +31,21 @@ export default function PolynomialsModule() {
     let cancelled = false;
 
     const load = async () => {
-      const [units, completedUnits] = await Promise.all([
+      const [moduleData, units, completedUnits] = await Promise.all([
+        fetchModule("polynomials"),
         fetchUnits("polynomials"),
         fetchCompletedUnits("polynomials"),
       ]);
 
       if (cancelled) return;
+      if (moduleData) {
+        setModuleRow({
+          title: moduleData.title,
+          description: moduleData.description,
+          gradient: moduleData.gradient ?? null,
+          icon: moduleData.icon ?? null,
+        });
+      }
       setUnitRows(units);
       setCompleted(completedUnits);
     };
@@ -80,6 +99,12 @@ export default function PolynomialsModule() {
     ? Math.round((completedCount / totalCount) * 100)
     : 0;
 
+  const moduleTitle = moduleRow?.title ?? "Polynomials";
+  const moduleDescription =
+    moduleRow?.description ??
+    "Is module me hum polynomial ka concept step by step samjhenge";
+  const moduleIcon = moduleRow?.icon ?? "📊";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
       <Header />
@@ -105,15 +130,13 @@ export default function PolynomialsModule() {
         <div className="mb-8">
           <div className="flex items-center space-x-4 mb-4">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-3xl">
-              📊
+              {moduleIcon}
             </div>
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-                Polynomials
+                {moduleTitle}
               </h1>
-              <p className="text-lg text-gray-600">
-                Is module me hum polynomial ka concept step by step samjhenge
-              </p>
+              <p className="text-lg text-gray-600">{moduleDescription}</p>
             </div>
           </div>
         </div>

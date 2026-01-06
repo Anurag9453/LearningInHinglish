@@ -6,7 +6,19 @@ export type ModuleRow = {
   description: string;
   gradient: string | null;
   icon: string | null;
+  image_url?: string | null;
   sort_order: number;
+};
+
+export type HomeContent = {
+  brandName?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  primaryCtaText?: string;
+  secondaryCtaText?: string;
+  coursesHeading?: string;
+  coursesDescription?: string;
+  footerText?: string;
 };
 
 export type UnitRow = {
@@ -53,10 +65,65 @@ export async function fetchModules(): Promise<ModuleRow[]> {
 
   const { data } = await supabase
     .from("modules")
-    .select("slug,title,description,gradient,icon,sort_order")
+    .select("slug,title,description,gradient,icon,image_url,sort_order")
     .order("sort_order", { ascending: true });
 
   return (data ?? []) as ModuleRow[];
+}
+
+export async function fetchModule(
+  moduleSlug: string
+): Promise<ModuleRow | null> {
+  try {
+    const res = await fetch(
+      `/api/catalog/modules/${encodeURIComponent(moduleSlug)}`,
+      {
+        method: "GET",
+      }
+    );
+    if (res.ok) {
+      const json = (await res.json()) as { module: ModuleRow | null };
+      return json.module ?? null;
+    }
+  } catch {
+    // ignore, fall back to direct supabase
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data } = await supabase
+    .from("modules")
+    .select("slug,title,description,gradient,icon,image_url,sort_order")
+    .eq("slug", moduleSlug)
+    .maybeSingle();
+
+  return (data ?? null) as ModuleRow | null;
+}
+
+export async function fetchHomePayload(): Promise<{
+  content: HomeContent | null;
+  modules: ModuleRow[];
+}> {
+  try {
+    const res = await fetch("/api/catalog/home", { method: "GET" });
+    if (res.ok) {
+      const json = (await res.json()) as {
+        content: HomeContent | null;
+        modules: ModuleRow[];
+      };
+      return {
+        content: (json.content ?? null) as HomeContent | null,
+        modules: json.modules ?? [],
+      };
+    }
+  } catch {
+    // ignore, fall back
+  }
+
+  // Fallback: modules from backend; no content.
+  const modules = await fetchModules();
+  return { content: null, modules };
 }
 
 export async function fetchUnits(moduleSlug: string): Promise<UnitRow[]> {

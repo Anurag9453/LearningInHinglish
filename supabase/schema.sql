@@ -8,10 +8,14 @@ create table if not exists public.modules (
   description text not null,
   gradient text,
   icon text,
+  image_url text,
   sort_order int not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- If you already ran this schema before, ensure columns exist
+alter table public.modules add column if not exists image_url text;
 
 create table if not exists public.units (
   id bigserial primary key,
@@ -37,6 +41,21 @@ exception when duplicate_object then null; end $$;
 
 do $$ begin
   create policy "public read units" on public.units
+    for select to anon, authenticated
+    using (true);
+exception when duplicate_object then null; end $$;
+
+-- 1b) Site content (public read) - headings/descriptions/etc
+create table if not exists public.site_content (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.site_content enable row level security;
+
+do $$ begin
+  create policy "public read site_content" on public.site_content
     for select to anon, authenticated
     using (true);
 exception when duplicate_object then null; end $$;
@@ -209,15 +228,45 @@ end;
 $$;
 
 -- 4) Seed catalog data (safe to re-run)
-insert into public.modules (slug, title, description, gradient, icon, sort_order)
+insert into public.modules (slug, title, description, gradient, icon, image_url, sort_order)
 values
-  ('polynomials', 'Mathematics Class 10', 'Class 10 Mathematics ko step by step samjhein. Polynomials, linear equations, aur real numbers jaise topics ko Hinglish mein seekhein.', 'from-blue-500 to-indigo-600', '📘', 1)
+  (
+    'polynomials',
+    'Mathematics Class 10',
+    'Class 10 Mathematics ko step by step samjhein. Polynomials, linear equations, aur real numbers jaise topics ko Hinglish mein seekhein.',
+    'from-blue-500 to-indigo-600',
+    '📘',
+    'https://www.svgrepo.com/show/505988/book-closed.svg',
+    1
+  )
 on conflict (slug) do update
 set title = excluded.title,
     description = excluded.description,
     gradient = excluded.gradient,
     icon = excluded.icon,
+    image_url = excluded.image_url,
     sort_order = excluded.sort_order,
+    updated_at = now();
+
+-- Seed site content used by Home (safe to re-run)
+insert into public.site_content (key, value, updated_at)
+values
+  (
+    'home',
+    jsonb_build_object(
+      'brandName', 'HinglishLearn',
+      'heroTitle', 'Learn School Subjects in Hinglish',
+      'heroSubtitle', 'Ab complex concepts ko samajhna hoga easy. Class 10 Mathematics jaise subjects seekho simple Hinglish language mein — step by step.',
+      'primaryCtaText', 'Start Learning',
+      'secondaryCtaText', 'Sign Up Free',
+      'coursesHeading', 'Available Courses',
+      'coursesDescription', 'Choose from our collection of courses designed to help you learn in simple Hinglish',
+      'footerText', '© 2026 HinglishLearn. Built for Indian learners 🇮🇳'
+    ),
+    now()
+  )
+on conflict (key) do update
+set value = excluded.value,
     updated_at = now();
 
 insert into public.units (module_slug, unit_slug, title, description, icon, sort_order)
