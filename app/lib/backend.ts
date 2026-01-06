@@ -68,6 +68,35 @@ export type ProfileRow = {
   phone_number?: string | null;
 };
 
+export type MeResponse = {
+  user: unknown;
+  profile: ProfileRow | null;
+};
+
+async function getAccessToken(): Promise<string | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.auth.getSession();
+  if (error) return null;
+  return data.session?.access_token ?? null;
+}
+
+export async function fetchMe(): Promise<MeResponse | null> {
+  const token = await getAccessToken();
+  if (!token) return null;
+
+  const res = await fetch("/api/me", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) return null;
+  return (await res.json()) as MeResponse;
+}
+
 export async function getCurrentUserId(): Promise<string | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
@@ -250,11 +279,7 @@ export async function fetchMyStats(): Promise<{
   if (!userId) return { xp: 0, unitsCompleted: 0, coursesCompleted: 0 };
 
   const [xpRes, unitsRes, coursesRes] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("xp")
-      .eq("id", userId)
-      .maybeSingle(),
+    supabase.from("profiles").select("xp").eq("id", userId).maybeSingle(),
     supabase
       .from("unit_progress")
       .select("unit_slug", { count: "exact", head: true })
@@ -274,6 +299,14 @@ export async function fetchMyStats(): Promise<{
 }
 
 export async function fetchMyProfile(): Promise<ProfileRow | null> {
+  // Prefer server route (auth verified + RLS) when possible
+  try {
+    const me = await fetchMe();
+    if (me?.profile) return me.profile;
+  } catch {
+    // ignore
+  }
+
   const supabase = getSupabase();
   if (!supabase) return null;
 
@@ -336,32 +369,29 @@ export async function awardXpOnce(params: {
   moduleSlug?: string;
   unitSlug?: string;
 }): Promise<{ awarded: boolean }> {
-  const supabase = getSupabase();
-  if (!supabase) return { awarded: false };
+  const token = await getAccessToken();
+  if (!token) return { awarded: false };
 
-  const userId = await getCurrentUserId();
-  if (!userId) return { awarded: false };
+  try {
+    const res = await fetch("/api/xp/award", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        eventKey: params.eventKey,
+        moduleSlug: params.moduleSlug,
+        unitSlug: params.unitSlug,
+      }),
+    });
 
-  const { error } = await supabase.from("xp_events").insert({
-    user_id: userId,
-    event_key: params.eventKey,
-    delta: params.delta,
-    module_slug: params.moduleSlug,
-    unit_slug: params.unitSlug,
-  });
-
-  if (!error) return { awarded: true };
-
-  // Duplicate event_key => already awarded
-  if (
-    typeof (error as unknown as { code?: string }).code === "string" &&
-    (error as unknown as { code?: string }).code === "23505"
-  ) {
+    if (!res.ok) return { awarded: false };
+    const json = (await res.json()) as { awarded?: boolean };
+    return { awarded: Boolean(json.awarded) };
+  } catch {
     return { awarded: false };
   }
-
-  // For any other error, fail quietly for now
-  return { awarded: false };
 }
 
 export async function markModuleQuizPassed(moduleSlug: string): Promise<void> {

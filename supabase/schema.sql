@@ -90,6 +90,54 @@ create table if not exists public.xp_events (
   unique(user_id, event_key)
 );
 
+-- XP rules: the DB decides the XP delta for each event_key.
+create table if not exists public.xp_rules (
+  event_key text primary key,
+  delta int not null check (delta > 0 and delta <= 1000)
+);
+
+alter table public.xp_rules enable row level security;
+
+do $$ begin
+  create policy "public read xp_rules" on public.xp_rules
+    for select to anon, authenticated
+    using (true);
+exception when duplicate_object then null; end $$;
+
+create or replace function public.enforce_xp_rule()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  rule_delta int;
+begin
+  select r.delta into rule_delta
+  from public.xp_rules r
+  where r.event_key = new.event_key;
+
+  if rule_delta is null then
+    raise exception 'Unknown XP event_key: %', new.event_key;
+  end if;
+
+  new.delta := rule_delta;
+  return new;
+end;
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_trigger where tgname = 'trg_enforce_xp_rule'
+  ) then
+    create trigger trg_enforce_xp_rule
+      before insert on public.xp_events
+      for each row execute function public.enforce_xp_rule();
+  end if;
+end;
+$$;
+
 create table if not exists public.unit_progress (
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   module_slug text not null,
@@ -122,12 +170,9 @@ do $$ begin
     with check (id = auth.uid());
 exception when duplicate_object then null; end $$;
 
-do $$ begin
-  create policy "profiles update own" on public.profiles
-    for update to authenticated
-    using (id = auth.uid())
-    with check (id = auth.uid());
-exception when duplicate_object then null; end $$;
+-- Do NOT allow clients to update profiles directly (prevents XP tampering).
+-- Profile rows are created/updated via the auth trigger, and XP is updated via xp_events trigger.
+drop policy if exists "profiles update own" on public.profiles;
 
 -- 2b) Auto-create profile for new auth users (Google/email/password/etc)
 create or replace function public.handle_new_user()
@@ -286,6 +331,13 @@ set title = excluded.title,
     image_url = excluded.image_url,
     sort_order = excluded.sort_order,
     updated_at = now();
+
+-- Seed XP rules (safe to re-run)
+insert into public.xp_rules (event_key, delta)
+values
+  ('quiz:polynomials:passed', 100)
+on conflict (event_key) do update
+set delta = excluded.delta;
 
 -- Seed site content used by Home (safe to re-run)
 insert into public.site_content (key, value, updated_at)
