@@ -78,3 +78,28 @@ input[type="reset"]:disabled,
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
+
+@layer components {
+  .app-bg {
+    @apply bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30;
+  }
+
+  .ui-card {
+    @apply rounded-2xl border border-gray-200 bg-white shadow-sm;
+  }
+
+  .ui-input {
+    @apply w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400;
+    @apply focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30;
+  }
+
+  .ui-btn-primary {
+    @apply rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold;
+    @apply hover:from-blue-700 hover:to-indigo-700;
+  }
+
+  .ui-btn-outline {
+    @apply rounded-xl border border-gray-300 bg-white text-gray-900;
+    @apply hover:bg-gray-50;
+  }
+}

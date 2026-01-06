@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 interface CourseCardProps {
   title: string;
@@ -17,22 +18,31 @@ export default function CourseCard({
   imageUrl,
   gradient = "from-blue-500 to-indigo-600",
 }: CourseCardProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  const showImage = useMemo(() => {
+    const url = imageUrl?.trim();
+    if (!url) return false;
+    return !imageFailed;
+  }, [imageFailed, imageUrl]);
+
   return (
     <Link href={href}>
       <div className="group bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 overflow-hidden h-full flex flex-col">
         {/* Image Section - Top Half */}
         <div
           className={`relative h-48 overflow-hidden ${
-            !imageUrl ? `bg-gradient-to-br ${gradient}` : ""
+            !showImage ? `bg-gradient-to-br ${gradient}` : ""
           }`}
         >
-          {imageUrl ? (
+          {showImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={imageUrl}
               alt={title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
+              onError={() => setImageFailed(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

@@ -139,7 +139,7 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/login">
+            <Link href="#courses">
               <button className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl">
                 {primaryCtaText}
               </button>
@@ -154,7 +154,10 @@ export default function Home() {
       </section>
 
       {/* Courses Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 bg-gradient-to-br from-gray-50 to-blue-50/30">
+      <section
+        id="courses"
+        className="px-4 sm:px-6 lg:px-8 py-16 sm:py-20 bg-gradient-to-br from-gray-50 to-blue-50/30"
+      >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-gray-900">
