@@ -55,7 +55,7 @@ alter table public.profiles add column if not exists full_name text;
 alter table public.profiles add column if not exists avatar_url text;
 alter table public.profiles add column if not exists auth_provider text;
 alter table public.profiles add column if not exists phone_number text;
-);
+
 
 create table if not exists public.xp_events (
   id bigserial primary key,
@@ -105,6 +105,7 @@ do $$ begin
     for update to authenticated
     using (id = auth.uid())
     with check (id = auth.uid());
+exception when duplicate_object then null; end $$;
 
 -- 2b) Auto-create profile for new auth users (Google/email/password/etc)
 create or replace function public.handle_new_user()
@@ -145,11 +146,12 @@ begin
   ) then
     create trigger on_auth_user_created
       after insert on auth.users
-      for each row execute procedure public.handle_new_user();
+      for each row execute function public.handle_new_user();
   end if;
 end;
+exception when duplicate_object then null;
+end;
 $$;
-exception when duplicate_object then null; end $$;
 
 do $$ begin
   create policy "xp_events insert own" on public.xp_events
