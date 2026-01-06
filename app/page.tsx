@@ -6,11 +6,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   fetchHomePayload,
   type HomeContent,
+  type HeaderContent,
   type ModuleRow,
 } from "./lib/backend";
 
 export default function Home() {
   const [content, setContent] = useState<HomeContent | null>(null);
+  const [header, setHeader] = useState<HeaderContent | null>(null);
   const [modules, setModules] = useState<ModuleRow[]>([]);
 
   useEffect(() => {
@@ -18,6 +20,7 @@ export default function Home() {
     fetchHomePayload().then((payload) => {
       if (cancelled) return;
       setContent(payload.content);
+      setHeader(payload.header);
       setModules(payload.modules);
     });
     return () => {
@@ -77,7 +80,9 @@ export default function Home() {
   }, [modules]);
 
   const brandName = content?.brandName ?? "HinglishLearn";
+  const navLoginText = content?.navLoginText ?? "Login";
   const heroTitle = content?.heroTitle ?? "Learn School Subjects in Hinglish";
+  const heroHighlightWord = content?.heroHighlightWord ?? "Hinglish";
   const heroSubtitle =
     content?.heroSubtitle ??
     "Ab complex concepts ko samajhna hoga easy. Class 10 Mathematics jaise subjects seekho simple Hinglish language mein — step by step.";
@@ -90,6 +95,11 @@ export default function Home() {
   const footerText =
     content?.footerText ?? "© 2026 HinglishLearn. Built for Indian learners 🇮🇳";
 
+  const navLogoLetter =
+    header?.logoLetter?.trim()?.slice(0, 1).toUpperCase() ||
+    brandName.trim().slice(0, 1).toUpperCase() ||
+    "H";
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
@@ -98,7 +108,7 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">H</span>
+                <span className="text-white font-bold text-lg">{navLogoLetter}</span>
               </div>
               <span className="text-xl font-bold text-gray-900">
                 {brandName}
@@ -106,7 +116,7 @@ export default function Home() {
             </div>
             <Link href="/login">
               <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
-                Login
+                {navLoginText}
               </button>
             </Link>
           </div>
@@ -119,7 +129,7 @@ export default function Home() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
             {heroTitle}{" "}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Hinglish
+              {heroHighlightWord}
             </span>
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8 leading-relaxed">

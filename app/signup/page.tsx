@@ -3,9 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getSupabase } from "../lib/supabase";
 import { getRedirectUrl } from "../lib/utils";
+import { fetchSiteContent, type AuthContent, type HeaderContent } from "../lib/backend";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -19,6 +20,37 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [header, setHeader] = useState<HeaderContent | null>(null);
+  const [content, setContent] = useState<AuthContent | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchSiteContent<HeaderContent>("header").then((data) => {
+      if (cancelled) return;
+      setHeader(data);
+    });
+
+    fetchSiteContent<AuthContent>("auth").then((data) => {
+      if (cancelled) return;
+      setContent(data);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const brandName = header?.brandName?.trim() || "HinglishLearn";
+  const logoLetter = useMemo(() => {
+    const explicit = header?.logoLetter?.trim();
+    if (explicit) return explicit.slice(0, 1).toUpperCase();
+    return brandName.trim().slice(0, 1).toUpperCase() || "H";
+  }, [brandName, header?.logoLetter]);
+
+  const signupTitle = content?.signupTitle?.trim() || "Create Account";
+  const signupSubtitle =
+    content?.signupSubtitle?.trim() || "Start learning in simple Hinglish";
 
   const handleSignup = async () => {
     setError(null);
@@ -79,20 +111,20 @@ export default function SignupPage() {
                   "linear-gradient(135deg, var(--primary), var(--primary2))",
               }}
             >
-              <span className="font-black text-xl">H</span>
+              <span className="font-black text-xl">{logoLetter}</span>
             </div>
             <span className="text-2xl font-extrabold tracking-tight text-gray-900">
-              HinglishLearn
+              {brandName}
             </span>
           </Link>
         </div>
 
         <div className="ui-card p-8">
           <h1 className="text-2xl font-black text-center mb-2 text-gray-900">
-            Create Account
+            {signupTitle}
           </h1>
           <p className="text-center text-gray-600 mb-6">
-            Start learning in simple Hinglish
+            {signupSubtitle}
           </p>
 
           <div className="grid grid-cols-2 gap-4 mb-4">

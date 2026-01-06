@@ -12,7 +12,9 @@ export type ModuleRow = {
 
 export type HomeContent = {
   brandName?: string;
+  navLoginText?: string;
   heroTitle?: string;
+  heroHighlightWord?: string;
   heroSubtitle?: string;
   primaryCtaText?: string;
   secondaryCtaText?: string;
@@ -26,6 +28,23 @@ export type HeaderContent = {
   logoLetter?: string;
   dashboardLabel?: string;
   logoutLabel?: string;
+};
+
+export type DashboardContent = {
+  welcomeTitle?: string;
+  welcomeSubtitle?: string;
+  totalXpLabel?: string;
+  coursesCompletedLabel?: string;
+  unitsCompletedLabel?: string;
+  coursesHeading?: string;
+  coursesDescription?: string;
+};
+
+export type AuthContent = {
+  loginTitle?: string;
+  loginSubtitle?: string;
+  signupTitle?: string;
+  signupSubtitle?: string;
 };
 
 const siteContentCache = new Map<string, unknown>();
@@ -153,7 +172,8 @@ export async function fetchSiteContent<T = unknown>(
     const res = await fetch(`/api/catalog/content/${encodeURIComponent(key)}`);
     if (res.ok) {
       const json = (await res.json()) as { content: T | null };
-      if (json.content != null) siteContentCache.set(key, json.content as unknown);
+      if (json.content != null)
+        siteContentCache.set(key, json.content as unknown);
       return (json.content ?? null) as T | null;
     }
   } catch {
@@ -216,6 +236,41 @@ export async function fetchMyXp(): Promise<number> {
     .maybeSingle();
 
   return Number(data?.xp ?? 0);
+}
+
+export async function fetchMyStats(): Promise<{
+  xp: number;
+  unitsCompleted: number;
+  coursesCompleted: number;
+}> {
+  const supabase = getSupabase();
+  if (!supabase) return { xp: 0, unitsCompleted: 0, coursesCompleted: 0 };
+
+  const userId = await getCurrentUserId();
+  if (!userId) return { xp: 0, unitsCompleted: 0, coursesCompleted: 0 };
+
+  const [xpRes, unitsRes, coursesRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("xp")
+      .eq("id", userId)
+      .maybeSingle(),
+    supabase
+      .from("unit_progress")
+      .select("unit_slug", { count: "exact", head: true })
+      .eq("user_id", userId),
+    supabase
+      .from("module_progress")
+      .select("module_slug", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .not("quiz_passed_at", "is", null),
+  ]);
+
+  return {
+    xp: Number(xpRes.data?.xp ?? 0),
+    unitsCompleted: Number(unitsRes.count ?? 0),
+    coursesCompleted: Number(coursesRes.count ?? 0),
+  };
 }
 
 export async function fetchMyProfile(): Promise<ProfileRow | null> {

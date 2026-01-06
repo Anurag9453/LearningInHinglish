@@ -6,12 +6,22 @@ import { getSupabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 import Header from "../components/Header";
 import CourseCard from "../components/CourseCard";
-import { fetchModules, type ModuleRow } from "../lib/backend";
+import {
+  fetchModules,
+  fetchMyStats,
+  fetchSiteContent,
+  type DashboardContent,
+  type ModuleRow,
+} from "../lib/backend";
 
 export default function DashboardPage() {
   const { xp } = useXp();
   const router = useRouter();
   const [modules, setModules] = useState<ModuleRow[]>([]);
+  const [content, setContent] = useState<DashboardContent | null>(null);
+  const [stats, setStats] = useState<{ unitsCompleted: number; coursesCompleted: number }>(
+    { unitsCompleted: 0, coursesCompleted: 0 }
+  );
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -30,6 +40,35 @@ export default function DashboardPage() {
       if (cancelled) return;
       setModules(rows);
     });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchSiteContent<DashboardContent>("dashboard")
+      .then((data) => {
+        if (cancelled) return;
+        setContent(data);
+      })
+      .catch(() => {
+        // ignore
+      });
+
+    fetchMyStats()
+      .then((s) => {
+        if (cancelled) return;
+        setStats({
+          unitsCompleted: s.unitsCompleted,
+          coursesCompleted: s.coursesCompleted,
+        });
+      })
+      .catch(() => {
+        // ignore
+      });
+
     return () => {
       cancelled = true;
     };
@@ -56,6 +95,16 @@ export default function DashboardPage() {
     })
   );
 
+  const welcomeTitle = content?.welcomeTitle ?? "Welcome Back! 👋";
+  const welcomeSubtitle =
+    content?.welcomeSubtitle ?? "Choose a course to start your learning journey";
+  const totalXpLabel = content?.totalXpLabel ?? "Total XP";
+  const coursesCompletedLabel = content?.coursesCompletedLabel ?? "Courses Completed";
+  const unitsCompletedLabel = content?.unitsCompletedLabel ?? "Units Completed";
+  const coursesHeading = content?.coursesHeading ?? "Available Courses";
+  const coursesDescription =
+    content?.coursesDescription ?? "Select a course to start learning";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
       <Header />
@@ -64,10 +113,10 @@ export default function DashboardPage() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-            Welcome Back! 👋
+            {welcomeTitle}
           </h1>
           <p className="text-lg text-gray-600">
-            Choose a course to start your learning journey
+            {welcomeSubtitle}
           </p>
         </div>
 
@@ -91,7 +140,7 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total XP</p>
+                <p className="text-sm text-gray-600">{totalXpLabel}</p>
                 <p className="text-2xl font-bold text-gray-900">{xp}</p>
               </div>
             </div>
@@ -115,8 +164,10 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Courses Completed</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-sm text-gray-600">{coursesCompletedLabel}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.coursesCompleted}
+                </p>
               </div>
             </div>
           </div>
@@ -139,8 +190,10 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Units Completed</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-sm text-gray-600">{unitsCompletedLabel}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.unitsCompleted}
+                </p>
               </div>
             </div>
           </div>
@@ -149,9 +202,9 @@ export default function DashboardPage() {
         {/* Courses Section */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Available Courses
+            {coursesHeading}
           </h2>
-          <p className="text-gray-600">Select a course to start learning</p>
+          <p className="text-gray-600">{coursesDescription}</p>
         </div>
 
         {/* Course Cards Grid */}

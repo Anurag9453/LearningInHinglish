@@ -23,12 +23,15 @@ create table if not exists public.units (
   unit_slug text not null,
   title text not null,
   description text,
+  content text,
   icon text,
   sort_order int not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique(module_slug, unit_slug)
 );
+
+alter table public.units add column if not exists content text;
 
 alter table public.modules enable row level security;
 alter table public.units enable row level security;
@@ -239,6 +242,42 @@ values
     'https://www.svgrepo.com/show/505988/book-closed.svg',
     1
   )
+  ,(
+    'android',
+    'Learn Android',
+    'Android app development seekhein from scratch. Java/Kotlin, UI design, aur app publishing tak - sab kuch Hinglish mein.',
+    'from-green-500 to-emerald-600',
+    '🤖',
+    null,
+    2
+  )
+  ,(
+    'docker-kubernetes',
+    'Zero to Hero in Docker and Kubernetes',
+    'Docker containers aur Kubernetes orchestration ko samjhein. DevOps concepts ko practical examples ke saath seekhein.',
+    'from-cyan-500 to-blue-600',
+    '🐳',
+    null,
+    3
+  )
+  ,(
+    'linear-algebra',
+    'Linear Algebra',
+    'Linear algebra ke fundamentals ko samjhein. Vectors, matrices, transformations - sab kuch easy Hinglish explanation ke saath.',
+    'from-purple-500 to-pink-600',
+    '📐',
+    null,
+    4
+  )
+  ,(
+    'numpy-pandas',
+    'NumPy, Pandas',
+    'Python data science libraries - NumPy aur Pandas ko seekhein. Data manipulation aur analysis ke liye complete guide.',
+    'from-orange-500 to-red-600',
+    '🐼',
+    null,
+    5
+  )
 on conflict (slug) do update
 set title = excluded.title,
     description = excluded.description,
@@ -255,13 +294,52 @@ values
     'home',
     jsonb_build_object(
       'brandName', 'HinglishLearn',
+      'navLoginText', 'Login',
       'heroTitle', 'Learn School Subjects in Hinglish',
+      'heroHighlightWord', 'Hinglish',
       'heroSubtitle', 'Ab complex concepts ko samajhna hoga easy. Class 10 Mathematics jaise subjects seekho simple Hinglish language mein — step by step.',
       'primaryCtaText', 'Start Learning',
       'secondaryCtaText', 'Sign Up Free',
       'coursesHeading', 'Available Courses',
       'coursesDescription', 'Choose from our collection of courses designed to help you learn in simple Hinglish',
       'footerText', '© 2026 HinglishLearn. Built for Indian learners 🇮🇳'
+    ),
+    now()
+  )
+on conflict (key) do update
+set value = excluded.value,
+    updated_at = now();
+
+-- Seed site content used by Dashboard (safe to re-run)
+insert into public.site_content (key, value, updated_at)
+values
+  (
+    'dashboard',
+    jsonb_build_object(
+      'welcomeTitle', 'Welcome Back! 👋',
+      'welcomeSubtitle', 'Choose a course to start your learning journey',
+      'totalXpLabel', 'Total XP',
+      'coursesCompletedLabel', 'Courses Completed',
+      'unitsCompletedLabel', 'Units Completed',
+      'coursesHeading', 'Available Courses',
+      'coursesDescription', 'Select a course to start learning'
+    ),
+    now()
+  )
+on conflict (key) do update
+set value = excluded.value,
+    updated_at = now();
+
+-- Seed site content used by Auth screens (safe to re-run)
+insert into public.site_content (key, value, updated_at)
+values
+  (
+    'auth',
+    jsonb_build_object(
+      'loginTitle', 'Welcome Back',
+      'loginSubtitle', 'Login to continue learning in Hinglish',
+      'signupTitle', 'Create Account',
+      'signupSubtitle', 'Start learning in simple Hinglish'
     ),
     now()
   )

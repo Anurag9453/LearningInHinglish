@@ -3,9 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getSupabase } from "../lib/supabase";
 import { getRedirectUrl } from "../lib/utils";
+import { fetchSiteContent, type AuthContent, type HeaderContent } from "../lib/backend";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +14,37 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [header, setHeader] = useState<HeaderContent | null>(null);
+  const [content, setContent] = useState<AuthContent | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchSiteContent<HeaderContent>("header").then((data) => {
+      if (cancelled) return;
+      setHeader(data);
+    });
+
+    fetchSiteContent<AuthContent>("auth").then((data) => {
+      if (cancelled) return;
+      setContent(data);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const brandName = header?.brandName?.trim() || "HinglishLearn";
+  const logoLetter = useMemo(() => {
+    const explicit = header?.logoLetter?.trim();
+    if (explicit) return explicit.slice(0, 1).toUpperCase();
+    return brandName.trim().slice(0, 1).toUpperCase() || "H";
+  }, [brandName, header?.logoLetter]);
+
+  const loginTitle = content?.loginTitle?.trim() || "Welcome Back";
+  const loginSubtitle =
+    content?.loginSubtitle?.trim() || "Login to continue learning in Hinglish";
 
   const handleLogin = async () => {
     setError(null);
@@ -50,10 +82,10 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">H</span>
+              <span className="text-white font-bold text-xl">{logoLetter}</span>
             </div>
             <span className="text-2xl font-bold text-gray-900">
-              HinglishLearn
+              {brandName}
             </span>
           </Link>
         </div>
@@ -61,10 +93,10 @@ export default function LoginPage() {
         {/* Login Card */}
         <div className="ui-card p-8">
           <h1 className="text-2xl font-bold text-center mb-2 text-gray-900">
-            Welcome Back
+            {loginTitle}
           </h1>
           <p className="text-center text-gray-600 mb-6">
-            Login to continue learning in Hinglish
+            {loginSubtitle}
           </p>
 
           {/* Email */}

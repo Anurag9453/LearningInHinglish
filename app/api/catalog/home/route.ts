@@ -49,7 +49,10 @@ export async function GET() {
     return res;
   }
 
-  const rows = (contentRowsRes.data ?? []) as Array<{ key: string; value: unknown }>;
+  const rows = (contentRowsRes.data ?? []) as Array<{
+    key: string;
+    value: unknown;
+  }>;
   const homeRow = rows.find((r) => r.key === "home");
   const headerRow = rows.find((r) => r.key === "header");
 
