@@ -1,35 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-function getBearerToken(req: Request): string | null {
-  const header =
-    req.headers.get("authorization") || req.headers.get("Authorization");
-  if (!header) return null;
-  const m = /^Bearer\s+(.+)$/i.exec(header);
-  return m?.[1]?.trim() ?? null;
-}
-
-function getServerSupabaseWithJwt(jwt: string) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-
-  if (!url || !anonKey) {
-    throw new Error("Supabase env vars missing");
-  }
-
-  return createClient(url, anonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-    global: {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-      },
-    },
-  });
-}
+import { requireJson, requireUser } from "../../_utils/auth";
+import { rateLimit } from "../../_utils/rateLimit";
 
 function isSafeKey(key: unknown): key is string {
   if (typeof key !== "string") return false;
@@ -47,10 +18,18 @@ function isOptionalSlug(v: unknown): v is string {
 }
 
 export async function POST(req: Request) {
-  const jwt = getBearerToken(req);
-  if (!jwt) {
-    return NextResponse.json({ error: "Missing auth" }, { status: 401 });
-  }
+  const limited = rateLimit(req, {
+    keyPrefix: "api:xp-award",
+    limit: 20,
+    windowMs: 60_000,
+  });
+  if (limited) return limited;
+
+  const jsonErr = requireJson(req);
+  if (jsonErr) return jsonErr;
+
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.res;
 
   let body: unknown;
   try {
@@ -69,16 +48,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid eventKey" }, { status: 400 });
   }
 
-  const supabase = getServerSupabaseWithJwt(jwt);
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser(jwt);
-
-  if (userError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { supabase } = auth;
 
   // Insert only the event key + slugs.
   // Delta is enforced by DB trigger (xp_rules) and user_id is enforced by RLS.
