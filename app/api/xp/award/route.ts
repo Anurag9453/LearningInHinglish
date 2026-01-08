@@ -18,7 +18,7 @@ function isOptionalSlug(v: unknown): v is string {
 }
 
 export async function POST(req: Request) {
-  const limited = rateLimit(req, {
+  const limited = await rateLimit(req, {
     keyPrefix: "api:xp-award",
     limit: 20,
     windowMs: 60_000,

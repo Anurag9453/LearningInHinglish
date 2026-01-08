@@ -10,7 +10,7 @@ function isSlug(v: unknown): v is string {
 }
 
 export async function POST(req: Request) {
-  const limited = rateLimit(req, {
+  const limited = await rateLimit(req, {
     keyPrefix: "api:progress-unit",
     limit: 30,
     windowMs: 60_000,

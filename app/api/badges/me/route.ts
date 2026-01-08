@@ -3,7 +3,7 @@ import { requireUser } from "../../_utils/auth";
 import { rateLimit } from "../../_utils/rateLimit";
 
 export async function GET(req: Request) {
-  const limited = rateLimit(req, {
+  const limited = await rateLimit(req, {
     keyPrefix: "api:badges-me",
     limit: 60,
     windowMs: 60_000,

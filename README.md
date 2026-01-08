@@ -113,6 +113,8 @@ Notes:
 | `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL                                           | Yes      |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key                                         | Yes      |
 | `NEXT_PUBLIC_APP_URL`           | Canonical application URL (used for OAuth/email redirects when set) | Optional |
+| `UPSTASH_REDIS_REST_URL`        | Upstash Redis REST URL (enables global rate limiting on Vercel)     | Optional |
+| `UPSTASH_REDIS_REST_TOKEN`      | Upstash Redis REST token (enables global rate limiting on Vercel)   | Optional |
 
 ## Project Structure
 

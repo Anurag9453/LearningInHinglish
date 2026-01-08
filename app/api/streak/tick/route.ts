@@ -7,7 +7,7 @@ function toDateStringUTC(d: Date): string {
 }
 
 export async function POST(req: Request) {
-  const limited = rateLimit(req, {
+  const limited = await rateLimit(req, {
     keyPrefix: "api:streak-tick",
     limit: 10,
     windowMs: 60_000,
