@@ -73,7 +73,10 @@ async function rateLimitUpstash(
 
   const now = Date.now();
   const retryAfterSec = Math.max(1, Math.ceil((result.reset - now) / 1000));
-  const res = NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  const res = NextResponse.json(
+    { error: "Too many requests" },
+    { status: 429 }
+  );
   res.headers.set("Retry-After", String(retryAfterSec));
   return res;
 }
